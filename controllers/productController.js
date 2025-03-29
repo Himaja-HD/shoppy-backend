@@ -1,46 +1,30 @@
-// Static data for testing
-const products = [
-    {
-        id: "1",
-        name: "Product 1",
-        price: 100,
-        description: "This is Product 1",
-        stockQuantity: 50
-    },
-    {
-        id: "2",
-        name: "Product 2",
-        price: 150,
-        description: "This is Product 2",
-        stockQuantity: 30
-    },
-    {
-        id: "3",
-        name: "Product 3",
-        price: 200,
-        description: "This is Product 3",
-        stockQuantity: 20
-    }
-];
+import axios from "axios";
 
-// Get all products (static data)
+// Get all products (dynamic data)
 export const getProducts = async (req, res) => {
     try {
-        res.json(products);  // Return the static products as a response
+        const response = await axios.get("https://dummyjson.com/products");
+        res.status(200).json(response.data);  
     } catch (error) {
-        res.status(500).json({ message: "Server Error" });
+        res.status(500).json({ message: "Failed to fetch products", error: error.message });
     }
 };
 
-// Get product by ID (static data)
+// Get product by ID (dynamic data)
 export const getProductById = async (req, res) => {
     try {
-        const product = products.find(p => p.id === req.params.id);  // Find product by ID
-        if (!product) {
+        const productId = req.params.id;
+        const response = await axios.get(`https://dummyjson.com/products/${productId}`);
+
+        if (!response.data) {
             return res.status(404).json({ message: "Product not found" });
         }
-        res.json(product);  // Return the product
+
+        res.status(200).json(response.data);  
     } catch (error) {
-        res.status(500).json({ message: "Server Error" });
+        if (error.response && error.response.status === 404) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+        res.status(500).json({ message: "Failed to fetch product", error: error.message });
     }
 };
