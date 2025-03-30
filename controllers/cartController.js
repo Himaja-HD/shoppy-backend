@@ -1,70 +1,69 @@
-import Cart from "../models/Cart.js";
 import Product from "../models/Product.js";
+import Cart from "../models/Cart.js"; 
 
+// Add product to cart
 export const addToCart = async (req, res) => {
     try {
         const { productId, quantity } = req.body;
-        const userId = req.user.id;
 
-        const product = await Product.findById(productId);
-        if (!product) return res.status(404).json({ message: "Product not found" });
-
-        let cart = await Cart.findOne({ userId });
-
-        if (!cart) {
-            cart = new Cart({ userId, products: [{ productId, quantity }] });
-        } else {
-            const existingItem = cart.products.find(item => item.productId.toString() === productId);
-            if (existingItem) {
-                existingItem.quantity += quantity;
-            } else {
-                cart.products.push({ productId, quantity });
-            }
+        if (!productId || !quantity) {
+            return res.status(400).json({ message: "Product ID and quantity are required" });
         }
 
-        await cart.save();
-        res.json({ message: "Product added to cart", cart });
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+
+        let cartItem = await Cart.findOne({ productId });
+
+        if (cartItem) {
+            cartItem.quantity += quantity;
+        } else {
+            cartItem = new Cart({ productId, quantity });
+        }
+
+        await cartItem.save();
+        res.status(201).json({ message: "Product added to cart", cartItem });
     } catch (error) {
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ message: "Failed to add to cart", error: error.message });
     }
 };
 
-// Update quantity in cart
-export const updateCart = async (req, res) => {
+// Update cart item quantity
+export const updateCartItem = async (req, res) => {
     try {
         const { quantity } = req.body;
-        const userId = req.user.id;
-        const productId = req.params.id;
+        const cartItem = await Cart.findById(req.params.id);
 
-        const cart = await Cart.findOne({ userId });
-        if (!cart) return res.status(404).json({ message: "Cart not found" });
+        if (!cartItem) return res.status(404).json({ message: "Cart item not found" });
 
-        const item = cart.products.find(p => p.productId.toString() === productId);
-        if (!item) return res.status(404).json({ message: "Product not in cart" });
-
-        item.quantity = quantity;
-        await cart.save();
-
-        res.json({ message: "Cart updated", cart });
+        cartItem.quantity = quantity;
+        await cartItem.save();
+        res.status(200).json({ message: "Cart item updated", cartItem });
     } catch (error) {
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ message: "Failed to update cart", error: error.message });
     }
 };
 
-// Remove product from cart
-export const removeFromCart = async (req, res) => {
+// Delete item from cart
+export const removeCartItem = async (req, res) => {
     try {
-        const userId = req.user.id;
-        const productId = req.params.id;
+        const cartItem = await Cart.findByIdAndDelete(req.params.id);
+        if (!cartItem) return res.status(404).json({ message: "Cart item not found" });
 
-        const cart = await Cart.findOne({ userId });
-        if (!cart) return res.status(404).json({ message: "Cart not found" });
-
-        cart.products = cart.products.filter(p => p.productId.toString() !== productId);
-        await cart.save();
-
-        res.json({ message: "Product removed from cart", cart });
+        res.status(200).json({ message: "Item removed from cart" });
     } catch (error) {
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ message: "Failed to remove from cart", error: error.message });
+    }
+};
+
+// Get all cart items
+export const getCartItems = async (req, res) => {
+    try {
+        const cartItems = await Cart.find().populate("productId");
+        res.status(200).json(cartItems);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to get cart items", error: error.message });
     }
 };

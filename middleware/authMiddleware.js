@@ -9,7 +9,7 @@ const protectRoute = (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = { id: decoded.userId };
+        req.user = decoded;
         next();
     } catch (error) {
         res.status(403).json({ message: "Invalid or expired token" });

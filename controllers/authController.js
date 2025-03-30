@@ -2,7 +2,7 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import generateJWTTokenAndSetCookie from "../utils/generateToken.js";
 
-// ✅ Register User
+
 export const registerUser = async (req, res) => {
     try {
         const { name, username, email, password } = req.body;
@@ -17,24 +17,23 @@ export const registerUser = async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new User({
-            name,
-            username,
-            email,
-            password: hashedPassword,
-        });
+        const user = new User({ name, username, email, password: hashedPassword });
 
         await user.save();
-        generateJWTTokenAndSetCookie(user._id, res);
+        const token = generateJWTTokenAndSetCookie(user._id, res); 
 
-        res.status(201).json({ message: "User registered successfully", userId: user._id });
+        res.status(201).json({ 
+            message: "User registered successfully", 
+            userId: user._id, 
+            token 
+        });
     } catch (error) {
         console.error("Error in registerUser:", error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
-// ✅ Login User
+// Login User
 export const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -53,8 +52,12 @@ export const loginUser = async (req, res) => {
             return res.status(401).json({ message: "Invalid email or password" });
         }
 
-        generateJWTTokenAndSetCookie(user._id, res);
-        res.json({ message: "Login successful", userId: user._id });
+        const token = generateJWTTokenAndSetCookie(user._id, res); 
+        res.json({ 
+            message: "Login successful", 
+            userId: user._id, 
+            token 
+        });
     } catch (error) {
         console.error("Error in loginUser:", error);
         res.status(500).json({ message: "Server error", error: error.message });
