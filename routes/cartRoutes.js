@@ -5,6 +5,7 @@ import { addToCart, updateCartItem, removeCartItem, getCartItems } from "../cont
 
 const router = express.Router();
 
+// Cart Routes
 router.post("/",protectRoute, validateCart, addToCart);
 router.put("/:id",protectRoute, updateCartItem);
 router.delete("/:id",protectRoute, removeCartItem);
